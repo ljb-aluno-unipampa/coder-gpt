@@ -31,6 +31,9 @@ WORKDIR /opt/gateway
 
 COPY start-gateway.sh .
 COPY templates templates
+COPY gwapi.py .
+COPY gwapi_app gwapi_app
+
 
 RUN chmod +x start-gateway.sh
 

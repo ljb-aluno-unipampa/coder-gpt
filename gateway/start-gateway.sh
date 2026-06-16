@@ -171,3 +171,9 @@ echo "/opt/gateway/data/kea-leases.csv"
 echo
 
 tail -f /dev/null
+
+echo "[9/9] Iniciando API Flask"
+
+cd /opt/gateway
+
+python3 gwapi.py
