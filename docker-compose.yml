@@ -63,12 +63,10 @@ networks:
 
   wan:
     driver: bridge
-
   lan:
     driver: bridge
-
     internal: true
-
     ipam:
       config:
         - subnet: ${LAN_CIDR}
+          gateway: ${DOCKER_LAN_GATEWAY}
