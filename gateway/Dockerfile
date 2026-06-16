@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
     nftables \
     python3 \
     python3-pip \
+    python3-venv \
     iproute2 \
     iputils-ping \
     curl \
@@ -15,15 +16,22 @@ RUN apt-get update && apt-get install -y \
     net-tools \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install \
+RUN python3 -m venv /opt/venv
+
+ENV PATH="/opt/venv/bin:$PATH"
+
+RUN pip install --upgrade pip
+
+RUN pip install \
     flask \
     python-dotenv \
     requests
 
 WORKDIR /opt/gateway
 
-COPY start-gateway.sh /opt/gateway/
+COPY start-gateway.sh .
+COPY templates templates
 
-RUN chmod +x /opt/gateway/start-gateway.sh
+RUN chmod +x start-gateway.sh
 
 CMD ["/opt/gateway/start-gateway.sh"]

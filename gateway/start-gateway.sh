@@ -2,35 +2,117 @@
 
 set -e
 
-echo "=================================="
-echo "Gateway starting..."
-echo "=================================="
+echo
+echo "======================================="
+echo "Docker Gateway Lab"
+echo "Gateway Initialization"
+echo "======================================="
+echo
 
 mkdir -p /opt/gateway/data
 mkdir -p /opt/gateway/generated
 
-echo "[1/5] Enabling IPv4 forwarding"
+###########################################
+# Detect LAN Interface
+###########################################
+
+echo "[1/8] Detectando LAN"
+
+LAN_IF=$(
+ip -o -4 addr show \
+| grep "${LAN_IP}" \
+| awk '{print $2}'
+)
+
+if [ -z "$LAN_IF" ]; then
+    echo "ERRO: LAN_IF não encontrada"
+    ip addr
+    exit 1
+fi
+
+echo "LAN_IF=${LAN_IF}"
+
+###########################################
+# Detect WAN Interface
+###########################################
+
+echo "[2/8] Detectando WAN"
+
+WAN_IF=$(
+ip route \
+| grep default \
+| awk '{print $5}' \
+| head -n1
+)
+
+if [ -z "$WAN_IF" ]; then
+    echo "ERRO: WAN_IF não encontrada"
+    exit 1
+fi
+
+echo "WAN_IF=${WAN_IF}"
+
+###########################################
+# Enable Routing
+###########################################
+
+echo "[3/8] Habilitando IPv4 Forward"
 
 sysctl -w net.ipv4.ip_forward=1
 
-echo "[2/5] Detecting interfaces"
+###########################################
+# Generate DHCP Config
+###########################################
 
-LAN_IF=$(ip -o addr show | grep "${LAN_IP}" | awk '{print $2}')
+echo "[4/8] Gerando kea-dhcp4.conf"
 
-WAN_IF=$(ip route | grep default | awk '{print $5}' | head -n1)
+sed \
+-e "s|__LAN_IF__|${LAN_IF}|g" \
+-e "s|__DHCP_SUBNET__|${DHCP_SUBNET}|g" \
+-e "s|__POOL_START__|${DHCP_POOL_START}|g" \
+-e "s|__POOL_END__|${DHCP_POOL_END}|g" \
+-e "s|__LAN_IP__|${LAN_IP}|g" \
+-e "s|__DHCP_DNS__|${DHCP_DNS}|g" \
+-e "s|__DHCP_DOMAIN__|${DHCP_DOMAIN}|g" \
+/opt/gateway/templates/kea-dhcp4.conf.tpl \
+> /etc/kea/kea-dhcp4.conf
 
-echo "LAN_IF=${LAN_IF}"
-echo "WAN_IF=${WAN_IF}"
+###########################################
+# Generate Control Agent Config
+###########################################
 
-echo "[3/5] Creating minimal nftables rules"
+echo "[5/8] Gerando kea-ctrl-agent.conf"
 
-cat >/tmp/ruleset.nft <<EOF
+cp \
+/opt/gateway/templates/kea-ctrl-agent.conf.tpl \
+/etc/kea/kea-ctrl-agent.conf
+
+###########################################
+# Apply nftables
+###########################################
+
+echo "[6/8] Aplicando Firewall"
+
+cat >/opt/gateway/generated/ruleset.nft <<EOF
+
 flush ruleset
 
 table inet filter {
 
+    chain input {
+        type filter hook input priority 0;
+
+        policy accept;
+    }
+
     chain forward {
         type filter hook forward priority 0;
+
+        policy accept;
+    }
+
+    chain output {
+        type filter hook output priority 0;
 
         policy accept;
     }
@@ -39,31 +121,53 @@ table inet filter {
 table ip nat {
 
     chain postrouting {
+
         type nat hook postrouting priority 100;
 
         oifname "${WAN_IF}" masquerade
     }
 }
+
 EOF
 
-nft -f /tmp/ruleset.nft
+nft -f /opt/gateway/generated/ruleset.nft
 
-echo "[4/5] Starting placeholder API"
+###########################################
+# Start Kea DHCP4
+###########################################
 
-cat >/opt/gateway/app.py <<'EOF'
-from flask import Flask
+echo "[7/8] Iniciando Kea DHCP4"
 
-app = Flask(__name__)
+mkdir -p /run/kea
 
-@app.route("/health")
-def health():
-    return {
-        "status": "ok"
-    }
+kea-dhcp4 \
+-c /etc/kea/kea-dhcp4.conf &
 
-app.run(host="0.0.0.0", port=5000)
-EOF
+sleep 3
 
-echo "[5/5] Starting Flask"
+###########################################
+# Start Control Agent
+###########################################
 
-python3 /opt/gateway/app.py
+echo "[8/8] Iniciando Kea Control Agent"
+
+kea-ctrl-agent \
+-c /etc/kea/kea-ctrl-agent.conf &
+
+sleep 2
+
+echo
+echo "======================================="
+echo "Gateway inicializado"
+echo "======================================="
+echo
+
+echo "LAN_IF=${LAN_IF}"
+echo "WAN_IF=${WAN_IF}"
+
+echo
+echo "Lease file:"
+echo "/opt/gateway/data/kea-leases.csv"
+echo
+
+tail -f /dev/null
