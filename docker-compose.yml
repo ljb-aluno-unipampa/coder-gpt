@@ -1,0 +1,74 @@
+services:
+
+  gw:
+    build:
+      context: ./gateway
+
+    container_name: gw
+
+    hostname: gw
+
+    privileged: true
+
+    env_file:
+      - .env
+
+    ports:
+      - "${WEB_PORT}:5000"
+
+    networks:
+      wan:
+      lan:
+        ipv4_address: ${LAN_IP}
+
+    volumes:
+      - ./gateway/data:/opt/gateway/data
+      - ./gateway/generated:/opt/gateway/generated
+
+    restart: unless-stopped
+
+  client1:
+    build:
+      context: ./client
+
+    container_name: client1
+
+    hostname: client1
+
+    depends_on:
+      - gw
+
+    networks:
+      lan:
+
+    restart: unless-stopped
+
+  client2:
+    build:
+      context: ./client
+
+    container_name: client2
+
+    hostname: client2
+
+    depends_on:
+      - gw
+
+    networks:
+      lan:
+
+    restart: unless-stopped
+
+networks:
+
+  wan:
+    driver: bridge
+
+  lan:
+    driver: bridge
+
+    internal: true
+
+    ipam:
+      config:
+        - subnet: ${LAN_CIDR}
