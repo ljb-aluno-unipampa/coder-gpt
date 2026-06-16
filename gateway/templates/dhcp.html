@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html><body>
+<h1>DHCP</h1>
+<div id='status'></div>
+<button onclick='loadStatus()'>Atualizar</button>
+<script>
+async function loadStatus(){
+ const r=await fetch('/dhcp/status');
+ document.getElementById('status').innerText=JSON.stringify(await r.json(),null,2);
+}
+loadStatus();
+</script>
+</body></html>
