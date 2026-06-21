@@ -37,5 +37,4 @@ echo "Rotas:"
 ip route
 
 echo
-
 tail -f /dev/null

@@ -241,13 +241,3 @@ Nenhum equipamento físico especializado é necessário.
 * autenticação simples;
 * ausência de TLS;
 * ausência de alta disponibilidade.
-
----
-
-# Contato
-
-Autor: <NOME>
-
-Instituição: Universidade Federal do Pampa (UNIPAMPA)
-
-E-mail: <EMAIL>
