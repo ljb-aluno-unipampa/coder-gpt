@@ -5,7 +5,7 @@ from .logging_config import configure_logging
 
 def create_app():
     load_dotenv()
-    app = Flask(__name__, template_folder="templates", static_folder="static")
+    app = Flask(__name__, template_folder=".", static_folder="static")
     app.config.from_object(Config)
 
     configure_logging(app)

@@ -24,6 +24,9 @@ services:
       context: ./client
     container_name: client1
     hostname: client1
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
     depends_on:
       - gw
     networks:
@@ -35,6 +38,9 @@ services:
       context: ./client
     container_name: client2
     hostname: client2
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
     depends_on:
       - gw
     networks:

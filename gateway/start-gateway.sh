@@ -136,9 +136,10 @@ nft -f /opt/gateway/generated/ruleset.nft
 # Start Kea DHCP4
 ###########################################
 
-echo "[7/8] Iniciando Kea DHCP4"
+echo "[7/9] Iniciando Kea DHCP4"
 
 mkdir -p /run/kea
+mkdir -p /var/run/kea
 
 kea-dhcp4 \
 -c /etc/kea/kea-dhcp4.conf &
@@ -149,7 +150,7 @@ sleep 3
 # Start Control Agent
 ###########################################
 
-echo "[8/8] Iniciando Kea Control Agent"
+echo "[8/9] Iniciando Kea Control Agent"
 
 kea-ctrl-agent \
 -c /etc/kea/kea-ctrl-agent.conf &
@@ -170,10 +171,10 @@ echo "Lease file:"
 echo "/opt/gateway/data/kea-leases.csv"
 echo
 
-tail -f /dev/null
-
 echo "[9/9] Iniciando API Flask"
 
 cd /opt/gateway
 
-python3 gwapi.py
+python3 gwapi.py &
+
+wait -n
