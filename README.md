@@ -130,19 +130,26 @@ Hosts Ubuntu conectados exclusivamente a LAN. O script de entrada remove o ender
 
 Requisitos minimos:
 
-* Host Linux x86_64.
+* Host Linux x86_64, preferencialmente Ubuntu 24.04 ou superior.
 * Docker Engine 20.10 ou superior.
-* Docker Compose v2 ou superior.
+* Docker Compose v2 ou superior, usando o comando `docker compose`.
+* Git para obter o repositorio.
 * Acesso a Internet no build e nos experimentos de NAT.
-* 2 vCPUs.
-* 4 GB RAM.
-* 5 GB livres em disco.
+* 2 vCPUs ou superior.
+* 2 GB de RAM livres para execucao; 4 GB recomendados para build e testes.
+* 5 GB livres em disco para imagens, camadas, venv Python e dados gerados.
 
 Ambiente usado na validacao local:
 
-* Docker `29.5.3`.
-* Docker Compose `v5.1.4`.
+* Linux Ubuntu 24 ou superior.
+* CPU AMD Ryzen 5600X.
+* 8 GB de memoria RAM.
+* Armazenamento SSD.
 * Imagens base `ubuntu:24.04`.
+
+Nao e necessario instalar Kea, nftables, Python, Flask, `requests` ou pacotes
+pip diretamente no host. O Dockerfile do gateway instala Python e cria o venv
+`/opt/venv`; os pacotes Python sao baixados via PyPI durante o build da imagem.
 
 ---
 
