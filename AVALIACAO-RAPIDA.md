@@ -208,6 +208,83 @@ Resultado esperado:
 
 ---
 
+# Passo 10 — Verificar Bloqueio e Liberação por Firewall
+
+Este passo demonstra a inserção e remoção de uma regra temporária de firewall pela API.
+A regra é aplicada na cadeia `forward` do nftables e bloqueia o tráfego encaminhado do
+client1, assumindo que ele recebeu o endereço padrão `192.168.100.100`.
+
+Inserir regra bloqueando completamente o tráfego encaminhado do client1:
+
+```bash
+BLOCK_HANDLE=$(curl -s -X POST http://localhost:8080/api/firewall \
+  -H 'Content-Type: application/json' \
+  -d '{"expression":"ip saddr 192.168.100.100 drop"}' \
+  | sed -n 's/.*"handle"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p')
+
+echo "Handle criado: ${BLOCK_HANDLE}"
+```
+
+Resultado esperado:
+
+```text
+Handle criado: <numero>
+```
+
+Testar o bloqueio:
+
+```bash
+docker exec client1 \
+curl -I --max-time 5 https://example.org
+```
+
+Resultado esperado:
+
+```text
+curl: (28) Connection timed out
+```
+
+ou outra falha equivalente de conexão, sem retorno HTTP `200`.
+
+Remover a regra de bloqueio:
+
+```bash
+curl -X DELETE "http://localhost:8080/api/firewall/${BLOCK_HANDLE}"
+```
+
+Resultado esperado:
+
+```json
+{
+  "handle": <numero>,
+  "status": "deleted"
+}
+```
+
+Refazer o teste após a liberação:
+
+```bash
+docker exec client1 \
+curl -I https://example.org
+```
+
+Resultado esperado:
+
+```text
+HTTP/2 200
+```
+
+ou
+
+```text
+HTTP/1.1 200 OK
+```
+
+Observação: se `client1` recebeu outro endereço dentro do pool DHCP, substituir
+`192.168.100.100` pelo endereço mostrado no Passo 6.
+
+---
+
 # Critérios de Aprovação
 
 O artefato é considerado funcional quando:
@@ -217,6 +294,8 @@ O artefato é considerado funcional quando:
 * [ ] Cliente recebe endereço DHCP;
 * [ ] Lease é registrado pelo Kea;
 * [ ] Cliente possui acesso externo através do gateway.
+* [ ] Regra de firewall bloqueia o tráfego do client1;
+* [ ] Remoção da regra libera novamente o acesso externo do client1.
 
 ---
 
